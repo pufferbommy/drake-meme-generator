@@ -8,7 +8,7 @@ function App() {
 
   const canvasRef = useRef()
   const imgRef = useRef()
-  const texts = useRef([])
+  let texts = useRef([])
 
   let selectedTextIdx = -1
 
@@ -156,13 +156,17 @@ function App() {
   }
 
   function handleKeyDown(e) {
-    console.log(e)
+    if (selectedTextIdx !== -1 && e.code === 'Backspace' && confirm('Do you want to delete it?')) {
+      texts.current = texts.current.filter((text, index) => index !== selectedTextIdx)
+      selectedTextIdx = -1
+      drawAll()
+    }
   }
 
   useEffect(function () {
     drawAll()
 
-    canvasRef.current.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown)
     canvasRef.current.addEventListener('mousedown', handleMouseDown)
     canvasRef.current.addEventListener('mousemove', handleMouseMove)
     canvasRef.current.addEventListener('mouseup', handleMouseUp)
