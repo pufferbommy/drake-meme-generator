@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import drakeMemeTemplate from './images/drake-meme-template.jpg'
 import Text from './classes/Text'
-import { Button, Center, Input, Flex, Box } from '@chakra-ui/react'
+import { Button, Center, Input, Flex, Box, useToast } from '@chakra-ui/react'
 
 function App() {
+  const toast = useToast()
   const canvasRef = useRef()
   const imgRef = useRef()
   let texts = useRef([])
@@ -14,9 +15,8 @@ function App() {
   }
 
   function getXYBasedOnArrayIndex(text) {
-    const padding = 10
     const { width, height } = canvasRef.current
-    const { textWidth, textHeight } = getRealTextWidthAndHeight(text)
+    const { textHeight } = getRealTextWidthAndHeight(text)
     if (texts.current.length === 0) {
       return {
         x: width - width / 4,
@@ -43,6 +43,13 @@ function App() {
     texts.current.push(new Text(text, x, y))
     e.target[0].value = ''
     drawAll()
+    toast({
+      title: 'Added text to canvas!',
+      status: 'success',
+      duration: 5000,
+      isClosable: true,
+      position: 'top-left',
+    })
   }
 
   function getRealTextWidthAndHeight(text) {
@@ -147,9 +154,16 @@ function App() {
 
   function handleSave() {
     const link = document.createElement('a')
-    link.download = 'dmg.jpg'
+    link.download = 'dmg.png'
     link.href = canvasRef.current.toDataURL()
     link.click()
+    toast({
+      title: 'Canvas has saved!',
+      status: 'success',
+      duration: 5000,
+      isClosable: true,
+      position: 'top-left',
+    })
   }
 
   function handleKeyDown(e) {
@@ -163,6 +177,40 @@ function App() {
   function handleClear() {
     texts.current = []
     drawAll()
+    toast({
+      title: 'Canvas has cleared!',
+      status: 'success',
+      duration: 5000,
+      isClosable: true,
+      position: 'top-left',
+    })
+  }
+
+  function handleCopy() {
+    canvasRef.current.toBlob(function (blob) {
+      const item = new ClipboardItem({ 'image/png': blob })
+      navigator.clipboard.write([item]).then(
+        function () {
+          toast({
+            title: 'Canvas copied to clipboard!',
+            status: 'success',
+            duration: 5000,
+            isClosable: true,
+            position: 'top-left',
+          })
+        },
+        function (error) {
+          toast({
+            title: 'Could not copy canvas to clipboard!',
+            description: error,
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+            position: 'top-left',
+          })
+        }
+      )
+    }, 'image/png')
   }
 
   useEffect(function () {
@@ -196,13 +244,19 @@ function App() {
             </Button>
           </Flex>
           <Flex justify="start" gap={2} mt={4}>
-            <Button onClick={handleClear} colorScheme="red">
+            <Button flexGrow={1} onClick={handleClear} colorScheme="red">
               Clear
               <Box fontSize="sm" ml={2}>
                 🖼️
               </Box>
             </Button>
-            <Button onClick={handleSave} colorScheme="green">
+            <Button flexGrow={1} onClick={handleCopy} colorScheme="yellow">
+              Copy
+              <Box fontSize="sm" ml={2}>
+                📋
+              </Box>
+            </Button>
+            <Button flexGrow={1} onClick={handleSave} colorScheme="green">
               Save
               <Box fontSize="sm" ml={2}>
                 💾
