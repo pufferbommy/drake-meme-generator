@@ -1,17 +1,13 @@
-import styles from './styles/App.module.css'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import drakeMemeTemplate from './images/drake-meme-template.jpg'
 import Text from './classes/Text'
+import { Button, Center, Input, Flex, Box } from '@chakra-ui/react'
 
 function App() {
-  const [showAddInput, setShowAddInput] = useState(false)
-
   const canvasRef = useRef()
   const imgRef = useRef()
   let texts = useRef([])
-
   let selectedTextIdx = -1
-
   const start = {
     x: 0,
     y: 0,
@@ -23,18 +19,18 @@ function App() {
     const { textWidth, textHeight } = getRealTextWidthAndHeight(text)
     if (texts.current.length === 0) {
       return {
-        x: width / 2 + width / 4 - (textWidth + padding * 2) / 2 - 40,
-        y: height / 2 - height / 4 - (textHeight + padding * 2) / 2 + 40,
+        x: width - width / 4,
+        y: height / 4 + textHeight / 2,
       }
     } else if (texts.current.length === 1) {
       return {
-        x: width / 2 + width / 4 - (textWidth + padding * 2) / 2,
-        y: height / 2 + height / 4 - (textHeight + padding * 2) / 2 + 40,
+        x: width - width / 4,
+        y: height - height / 4 + textHeight / 2,
       }
     } else {
       return {
-        x: width / 2 + width / 4 - (textWidth + padding * 2) / 2,
-        y: height / 2 + textHeight / 2 - 20,
+        x: width - width / 4,
+        y: height / 2 + textHeight / 2,
       }
     }
   }
@@ -42,10 +38,10 @@ function App() {
   function handleSubmit(e) {
     e.preventDefault()
     const text = e.target[0].value
+    console.log(text)
     const { x, y } = getXYBasedOnArrayIndex(text)
     texts.current.push(new Text(text, x, y))
     e.target[0].value = ''
-    setShowAddInput(false)
     drawAll()
   }
 
@@ -67,10 +63,9 @@ function App() {
 
   function textHittest(x, y, i) {
     const text = texts.current[i]
-    const padding = 10
     const { textWidth, textHeight } = getRealTextWidthAndHeight(text.content)
-    const hittedX = x >= text.x - padding && x <= text.x + textWidth + padding
-    const hittedY = y >= text.y - textHeight - padding && y <= text.y + padding
+    const hittedX = x >= text.x - textWidth / 2 && x <= text.x + textWidth / 2
+    const hittedY = y >= text.y - textHeight && y <= text.y + textHeight / 2
     const hitted = hittedX && hittedY
     return hitted
   }
@@ -133,12 +128,14 @@ function App() {
 
   function drawTexts() {
     const ctx = getContext()
+    ctx.textAlign = 'start'
     const fontConfig = {
       size_px: 64,
       family: 'Noto Sans Thai',
     }
+    ctx.textAlign = 'center'
+    ctx.font = `${fontConfig.size_px}px ${fontConfig.family}`
     texts.current.forEach(({ content, x, y }) => {
-      ctx.font = `${fontConfig.size_px}px ${fontConfig.family}`
       ctx.fillText(content, x, y)
     })
   }
@@ -163,6 +160,11 @@ function App() {
     }
   }
 
+  function handleClear() {
+    texts.current = []
+    drawAll()
+  }
+
   useEffect(function () {
     drawAll()
 
@@ -172,6 +174,7 @@ function App() {
     canvasRef.current.addEventListener('mouseup', handleMouseUp)
 
     return () => {
+      window.removeEventListener('keydown', handleKeyDown)
       canvasRef.current.removeEventListener('mousedown', handleMouseDown)
       canvasRef.current.removeEventListener('mousemove', handleMouseMove)
       canvasRef.current.removeEventListener('mouseup', handleMouseUp)
@@ -179,21 +182,36 @@ function App() {
   }, [])
 
   return (
-    <div className={styles.App}>
-      <canvas width={750} height={750} ref={canvasRef} />
-      <div className={styles.Add}>
-        <button onClick={() => setShowAddInput((prev) => !prev)}>
-          <svg width="32" fill="white" height="32" viewBox="0 0 16 16">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
-          </svg>
-        </button>
-        <button onClick={handleSave}>Save</button>
-        <form className={showAddInput ? styles.hide : styles.show} onSubmit={handleSubmit}>
-          <input type="text" />
-        </form>
-      </div>
-      <img ref={imgRef} onLoad={drawAll} hidden src={drakeMemeTemplate} alt="" />
-    </div>
+    <Center h="full">
+      <Flex align="start" gap={4}>
+        <Box shadow="xs" overflow="hidden" borderWidth={1} rounded="md">
+          <canvas width={750} height={750} ref={canvasRef} />
+        </Box>
+        <img ref={imgRef} onLoad={drawAll} hidden src={drakeMemeTemplate} alt="" />
+        <Box draggable shadow="xs" borderWidth={1} rounded="md" p={4}>
+          <Flex as="form" gap={2} onSubmit={handleSubmit}>
+            <Input size="lg" isRequired placeholder="any text" type="text" />
+            <Button size="lg" colorScheme="blue" type="submit">
+              Add
+            </Button>
+          </Flex>
+          <Flex justify="start" gap={2} mt={4}>
+            <Button onClick={handleClear} colorScheme="red">
+              Clear
+              <Box fontSize="sm" ml={2}>
+                🖼️
+              </Box>
+            </Button>
+            <Button onClick={handleSave} colorScheme="green">
+              Save
+              <Box fontSize="sm" ml={2}>
+                💾
+              </Box>
+            </Button>
+          </Flex>
+        </Box>
+      </Flex>
+    </Center>
   )
 }
 
